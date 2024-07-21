@@ -131,7 +131,10 @@ public:
         struct sockaddr_in end_servidor, end_cliente;
         socklen_t end_cliente_size = sizeof(end_cliente);
         char buffer[sizeof(Dados_horario)];
-
+        if(lider == false){
+            display();
+            engrenagens();
+        }
         if((socket_receptor = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP)) == -1){
             cerr << "Erro ao criar Socket UDP" << endl;
             return;
