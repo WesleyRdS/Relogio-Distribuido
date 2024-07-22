@@ -27,6 +27,7 @@ private:
     int drift;
     int portaE;
     int portaR;
+    int portaC;
     string ip_local;
     bool lider;
     vector<string> listaIP;
@@ -155,6 +156,7 @@ public:
         if(recvfrom(socket_receptor, buffer, sizeof(buffer), 0, (struct sockaddr *) &end_cliente, &end_cliente_size) == -1){
             cerr << "Erro ao receber horario" << endl;
         }else{
+
             Dados_horario horario_recebido;
             memcpy(&horario_recebido, buffer, sizeof(Dados_horario));
 
@@ -173,6 +175,62 @@ public:
 
         close(socket_receptor);
     }
+
+
+    void processarComando() {
+        char* porta_ambienteC = getenv("PC");
+        int porta = atoi(porta_ambienteC);
+        int socket_receptor;
+        struct sockaddr_in end_servidor, end_cliente;
+        socklen_t end_cliente_size = sizeof(end_cliente);
+        char buffer[26];
+
+        if ((socket_receptor = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP)) == -1) {
+            cerr << "Erro ao criar Socket UDP" << endl;
+            return;
+        }
+
+        memset((char *) &end_servidor, 0, sizeof(end_servidor));
+        end_servidor.sin_family = AF_INET;
+        end_servidor.sin_addr.s_addr = htonl(INADDR_ANY);
+        end_servidor.sin_port = htons(porta);
+
+        if (bind(socket_receptor, (struct sockaddr *) &end_servidor, sizeof(end_servidor)) == -1) {
+            cerr << "Erro ao se conectar" << endl;
+            close(socket_receptor);
+            return;
+        }
+
+        cout << "Aguardando comando UDP na porta " << porta << "..." << endl;
+
+        while (true) {
+            if (recvfrom(socket_receptor, buffer, sizeof(buffer), 0, (struct sockaddr *) &end_cliente, &end_cliente_size) == -1) {
+                cerr << "Erro ao receber comando UDP" << endl;
+            } else {
+                char tipoComando[20];
+                int valor1, valor2, valor3;
+
+                cout << "Comando recebido via UDP: " << buffer << endl;
+
+                if (sscanf(buffer, "%s %d %d %d", tipoComando, &valor1, &valor2, &valor3) == 4) {
+                    if (strcmp(tipoComando, "SET_DRIFT") == 0) {
+                        setDrift(valor1);  
+                    } else if (strcmp(tipoComando, "SET_HORARIO") == 0) {
+                        setHorario(valor1, valor2, valor3);  
+                    } else {
+                        cout << "Comando inválido." << endl;
+                    }
+                } else {
+                    cout << "Formato de comando inválido." << endl;
+                }
+                cout << "Comando processado: " << buffer << endl;
+            }
+        }
+
+        close(socket_receptor);
+    }
+
+
 
 };
 
@@ -193,10 +251,17 @@ int main(){
         }
     });
 
+    thread comando_thread([&sincronismo](){
+        while (true)
+        {
+            sincronismo.processarComando();
+        }
+        
+    });
     
     enviar_thread.join();
     receber_thread.join();
-
+    comando_thread.join();
     return 0;
 }
 
