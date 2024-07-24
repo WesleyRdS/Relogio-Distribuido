@@ -1,0 +1,19 @@
+# Use an official gcc image as a parent image
+FROM gcc:latest
+
+# Set the working directory in the container
+WORKDIR /app
+
+# Copy the current directory contents into the container at /app
+COPY relogio.cpp .
+
+# Install necessary libraries and tools
+RUN apt-get update && \
+    apt-get install -y \
+    libpthread-stubs0-dev
+
+# Compile the C++ program
+RUN g++ -std=c++11 -o relogio relogio.cpp
+
+# Run the application when the container launches
+CMD ["./relogio"]

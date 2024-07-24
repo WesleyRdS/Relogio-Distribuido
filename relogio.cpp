@@ -153,8 +153,8 @@ public:
             return;
         }
 
-        if(recvfrom(socket_receptor, buffer, sizeof(buffer), 0, (struct sockaddr *) &end_cliente, &end_cliente_size) == -1){
-            cerr << "Erro ao receber horario" << endl;
+        if(recvfrom(socket_receptor, buffer, sizeof(buffer), 0, (struct sockaddr *) &end_cliente, &end_cliente_size) == 0){
+            lider = true;
         }else{
 
             Dados_horario horario_recebido;
@@ -212,7 +212,7 @@ public:
 
                 cout << "Comando recebido via UDP: " << buffer << endl;
 
-                if (sscanf(buffer, "%s %d %d %d", tipoComando, &valor1, &valor2, &valor3) == 4) {
+                if ((sscanf(buffer, "%s %d %d %d", tipoComando, &valor1, &valor2, &valor3) == 4) || sscanf(buffer, "%s %d", tipoComando, &valor1) == 2) {
                     if (strcmp(tipoComando, "SET_DRIFT") == 0) {
                         setDrift(valor1);  
                     } else if (strcmp(tipoComando, "SET_HORARIO") == 0) {
